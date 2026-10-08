@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom Styling
+# Custom Styling (Fixed unsafe_allow_html parameter)
 st.markdown(
     """
     <style>
@@ -30,7 +30,6 @@ st.markdown(
     .sub-header {font-size:16px; color:#4A5568;}
     </style>
 """,
-    unsafe_allow_color_multiplier=True,
     unsafe_allow_html=True,
 )
 
@@ -42,103 +41,109 @@ st.markdown(
 @st.cache_data
 def get_initial_stock_data():
   return pd.DataFrame({
-      'Model_Variant': [
-          'HOP LEO (Pure EV)',
-          'HOP LYF (Pure EV)',
-          'HOP OXO (Electric Motorcycle)',
-          'HOP LEO Extended Range',
+      "Model_Variant": [
+          "HOP LEO (Pure EV)",
+          "HOP LYF (Pure EV)",
+          "HOP OXO (Electric Motorcycle)",
+          "HOP LEO Extended Range",
       ],
-      'Quantity': [4, 12, 2, 8],
-      'Unit_Cost_Price': [85000, 78000, 135000, 92000],
-      'Ex_Showroom_Price': [98000, 89000, 155000, 106000],
-      'Days_in_Showroom': [18, 42, 75, 25],
-      'Avg_Daily_Sales': [0.5, 0.3, 0.1, 0.4],
+      "Quantity": [4, 12, 2, 8],
+      "Unit_Cost_Price": [85000, 78000, 135000, 92000],
+      "Ex_Showroom_Price": [98000, 89000, 155000, 106000],
+      "Days_in_Showroom": [18, 42, 75, 25],
+      "Avg_Daily_Sales": [0.5, 0.3, 0.1, 0.4],
   })
 
 
 stock_df = get_initial_stock_data()
 
 # Process Inventory Metrics
-stock_df['Capital_Lockup_INR'] = (
-    stock_df['Quantity'] * stock_df['Unit_Cost_Price']
+stock_df["Capital_Lockup_INR"] = (
+    stock_df["Quantity"] * stock_df["Unit_Cost_Price"]
 )
-stock_df['Unit_Margin_INR'] = (
-    stock_df['Ex_Showroom_Price'] - stock_df['Unit_Cost_Price']
+stock_df["Unit_Margin_INR"] = (
+    stock_df["Ex_Showroom_Price"] - stock_df["Unit_Cost_Price"]
 )
 
 conditions = [
-    (stock_df['Days_in_Showroom'] <= 30),
-    (stock_df['Days_in_Showroom'] > 30) & (stock_df['Days_in_Showroom'] <= 60),
-    (stock_df['Days_in_Showroom'] > 60),
+    (stock_df["Days_in_Showroom"] <= 30),
+    (stock_df["Days_in_Showroom"] > 30) & (stock_df["Days_in_Showroom"] <= 60),
+    (stock_df["Days_in_Showroom"] > 60),
 ]
-choices = ['Healthy Stock', 'Moderate Velocity', 'Dead Capital (Liquidate)']
-stock_df['Aging_Status'] = np.select(conditions, choices, default='Unknown')
+choices = ["Healthy Stock", "Moderate Velocity", "Dead Capital (Liquidate)"]
+stock_df["Aging_Status"] = np.select(conditions, choices, default="Unknown")
 
-stock_df['Reorder_Point'] = (
-    stock_df['Avg_Daily_Sales'] * 14
+stock_df["Reorder_Point"] = (
+    stock_df["Avg_Daily_Sales"] * 14
 ) + 3  # 14 days lead time + 3 safety stock
-stock_df['Action_Required'] = np.where(
-    stock_df['Quantity'] <= stock_df['Reorder_Point'],
-    '🚨 REORDER NOW FROM OEM',
-    '✅ Stock Adequate',
+stock_df["Action_Required"] = np.where(
+    stock_df["Quantity"] <= stock_df["Reorder_Point"],
+    "🚨 REORDER NOW FROM OEM",
+    "✅ Stock Adequate",
 )
 
 # ==========================================
 # SIDEBAR CONTROLS
 # ==========================================
-st.sidebar.title('⚡ Dealership Navigation')
-st.sidebar.markdown('**Client Entity:** Bhawani Electric Automobile[cite: 25]')
-st.sidebar.markdown('**Brand Partner:** HOP Electric[cite: 25]')
+st.sidebar.title("⚡ Dealership Navigation")
+st.sidebar.markdown("**Client Entity:** Bhawani Electric Automobile")
+st.sidebar.markdown("**Brand Partner:** HOP Electric")
 st.sidebar.divider()
 
 page = st.sidebar.radio(
-    'Select Operational Module:',
+    "Select Operational Module:",
     [
-        '1. Showroom Inventory Engine',
-        '2. AI Lead Scoring Engine',
-        '3. Battery Health Diagnostics',
-        '4. Dealer P&L & Margins',
+        "1. Showroom Inventory Engine",
+        "2. AI Lead Scoring Engine",
+        "3. Battery Health Diagnostics",
+        "4. Dealer P&L & Margins",
     ],
 )
 
 selected_models = st.sidebar.multiselect(
-    'Filter by Model Variant:',
-    options=stock_df['Model_Variant'].unique(),
-    default=stock_df['Model_Variant'].unique(),
+    "Filter by Model Variant:",
+    options=stock_df["Model_Variant"].unique(),
+    default=stock_df["Model_Variant"].unique(),
 )
 
-filtered_stock = stock_df[stock_df['Model_Variant'].isin(selected_models)]
+filtered_stock = stock_df[stock_df["Model_Variant"].isin(selected_models)]
 
 # ==========================================
 # MODULE 1: INVENTORY ENGINE
 # ==========================================
-if page == '1. Showroom Inventory Engine':
+if page == "1. Showroom Inventory Engine":
   st.markdown(
       '<div class="main-header">📦 Showroom Inventory Aging & Reorder'
-      ' Engine</div>',
+      " Engine</div>",
       unsafe_allow_html=True,
   )
   st.markdown(
       '<div class="sub-header">Monitors stock aging, working capital lockup,'
-      ' and automated OEM reorder points.</div>',
+      " and automated OEM reorder points.</div>",
       unsafe_allow_html=True,
   )
   st.divider()
 
   # KPI Row
   c1, c2, c3, c4 = st.columns(4)
-  c1.metric('Total On-Hand Inventory', f"{filtered_stock['Quantity'].sum()} Units")
+  c1.metric(
+      "Total On-Hand Inventory", f"{filtered_stock['Quantity'].sum()} Units"
+  )
   c2.metric(
-      'Capital Locked Up',
+      "Capital Locked Up",
       f"₹{filtered_stock['Capital_Lockup_INR'].sum()/100000:.2f} Lakhs",
   )
   c3.metric(
-      'Reorder Triggers Pending',
-      len(filtered_stock[filtered_stock['Quantity'] <= filtered_stock['Reorder_Point']]),
+      "Reorder Triggers Pending",
+      len(
+          filtered_stock[
+              filtered_stock["Quantity"] <= filtered_stock["Reorder_Point"]
+          ]
+      ),
   )
   c4.metric(
-      'Dead Capital Units (>60 Days)',
-      len(filtered_stock[filtered_stock['Days_in_Showroom'] > 60]),
+      "Dead Capital Units (>60 Days)",
+      len(filtered_stock[filtered_stock["Days_in_Showroom"] > 60]),
   )
 
   st.divider()
@@ -147,50 +152,52 @@ if page == '1. Showroom Inventory Engine':
   col_left, col_right = st.columns(2)
 
   with col_left:
-    st.subheader('Capital Lockup by Model (₹ Lakhs)')
+    st.subheader("Capital Lockup by Model (₹ Lakhs)")
     fig1, ax1 = plt.subplots(figsize=(6, 4))
     ax1.bar(
-        filtered_stock['Model_Variant'],
-        filtered_stock['Capital_Lockup_INR'] / 100000,
-        color='#1f77b4',
+        filtered_stock["Model_Variant"],
+        filtered_stock["Capital_Lockup_INR"] / 100000,
+        color="#1f77b4",
     )
-    plt.xticks(rotation=25, ha='right')
-    ax1.set_ylabel('Capital Locked (₹ Lakhs)')
+    plt.xticks(rotation=25, ha="right")
+    ax1.set_ylabel("Capital Locked (₹ Lakhs)")
     st.pyplot(fig1)
 
   with col_right:
-    st.subheader('Inventory Stock Levels vs Reorder Triggers')
+    st.subheader("Inventory Stock Levels vs Reorder Triggers")
     fig2, ax2 = plt.subplots(figsize=(6, 4))
-    x = np.arange(len(filtered_stock['Model_Variant']))
+    x = np.arange(len(filtered_stock["Model_Variant"]))
     width = 0.35
     ax2.bar(
         x - width / 2,
-        filtered_stock['Quantity'],
+        filtered_stock["Quantity"],
         width,
-        label='Current Units',
-        color='#2ca02c',
+        label="Current Units",
+        color="#2ca02c",
     )
     ax2.bar(
         x + width / 2,
-        filtered_stock['Reorder_Point'],
+        filtered_stock["Reorder_Point"],
         width,
-        label='Reorder Threshold',
-        color='#d62728',
+        label="Reorder Threshold",
+        color="#d62728",
     )
     ax2.set_xticks(x)
-    ax2.set_xticklabels(filtered_stock['Model_Variant'], rotation=25, ha='right')
+    ax2.set_xticklabels(
+        filtered_stock["Model_Variant"], rotation=25, ha="right"
+    )
     ax2.legend()
     st.pyplot(fig2)
 
-  st.subheader('📋 Real-Time Showroom Stock Ledger')
+  st.subheader("📋 Real-Time Showroom Stock Ledger")
   st.dataframe(
       filtered_stock[[
-          'Model_Variant',
-          'Quantity',
-          'Days_in_Showroom',
-          'Aging_Status',
-          'Reorder_Point',
-          'Action_Required',
+          "Model_Variant",
+          "Quantity",
+          "Days_in_Showroom",
+          "Aging_Status",
+          "Reorder_Point",
+          "Action_Required",
       ]],
       use_container_width=True,
   )
@@ -198,14 +205,14 @@ if page == '1. Showroom Inventory Engine':
 # ==========================================
 # MODULE 2: AI LEAD SCORING ENGINE
 # ==========================================
-elif page == '2. AI Lead Scoring Engine':
+elif page == "2. AI Lead Scoring Engine":
   st.markdown(
       '<div class="main-header">🎯 AI Walk-in Customer Lead Scoring</div>',
       unsafe_allow_html=True,
   )
   st.markdown(
       '<div class="sub-header">Predicts purchase probability for showroom'
-      ' walk-in customers based on buyer profiles.</div>',
+      " walk-in customers based on buyer profiles.</div>",
       unsafe_allow_html=True,
   )
   st.divider()
@@ -213,20 +220,20 @@ elif page == '2. AI Lead Scoring Engine':
   col_inputs, col_results = st.columns([1, 1])
 
   with col_inputs:
-    st.subheader('Enter Customer Walk-in Profile')
-    budget = st.number_input('Customer Budget (INR):', value=115000, step=5000)
-    commute_km = st.slider('Daily Commute (KM):', 5, 100, 35)
+    st.subheader("Enter Customer Walk-in Profile")
+    budget = st.number_input("Customer Budget (INR):", value=115000, step=5000)
+    commute_km = st.slider("Daily Commute (KM):", 5, 100, 35)
     home_charging = st.radio(
-        'Home Charging Facility Available?', ['Yes (1)', 'No (0)']
+        "Home Charging Facility Available?", ["Yes (1)", "No (0)"]
     )
     exchange_offered = st.radio(
-        'Old 2-Wheeler Exchange Offered?', ['Yes (1)', 'No (0)']
+        "Old 2-Wheeler Exchange Offered?", ["Yes (1)", "No (0)"]
     )
-    test_ride = st.radio('Test Ride Taken?', ['Yes (1)', 'No (0)'])
+    test_ride = st.radio("Test Ride Taken?", ["Yes (1)", "No (0)"])
 
-    hc_val = 1 if 'Yes' in home_charging else 0
-    ex_val = 1 if 'Yes' in exchange_offered else 0
-    tr_val = 1 if 'Yes' in test_ride else 0
+    hc_val = 1 if "Yes" in home_charging else 0
+    ex_val = 1 if "Yes" in exchange_offered else 0
+    tr_val = 1 if "Yes" in test_ride else 0
 
   # Train Model
   X_train = np.array([
@@ -249,48 +256,48 @@ elif page == '2. AI Lead Scoring Engine':
   )
 
   with col_results:
-    st.subheader('Conversion Probability Result')
-    st.metric('Estimated Purchase Probability', f'{prob:.1f}%')
+    st.subheader("Conversion Probability Result")
+    st.metric("Estimated Purchase Probability", f"{prob:.1f}%")
 
     if prob >= 70:
       st.error(
-          '🔥 HOT LEAD - Assign Senior Sales Executive immediately for closing.'
+          "🔥 HOT LEAD - Assign Senior Sales Executive immediately for closing."
       )
     elif prob >= 40:
       st.warning(
-          '⚡ WARM LEAD - Schedule follow-up test ride within 48 hours.'
+          "⚡ WARM LEAD - Schedule follow-up test ride within 48 hours."
       )
     else:
       st.info(
-          '❄️ COLD LEAD - Add to automated WhatsApp promotional broadcast'
-          ' list.'
+          "❄️ COLD LEAD - Add to automated WhatsApp promotional broadcast"
+          " list."
       )
 
     st.divider()
-    st.subheader('Feature Importance Weightings')
+    st.subheader("Feature Importance Weightings")
     fig_imp, ax_imp = plt.subplots(figsize=(6, 3.5))
     features = [
-        'Budget',
-        'Commute KM',
-        'Home Charging',
-        'Exchange',
-        'Test Ride',
+        "Budget",
+        "Commute KM",
+        "Home Charging",
+        "Exchange",
+        "Test Ride",
     ]
-    ax_imp.barh(features, clf.feature_importances_, color='#9467bd')
+    ax_imp.barh(features, clf.feature_importances_, color="#9467bd")
     st.pyplot(fig_imp)
 
 # ==========================================
 # MODULE 3: BATTERY HEALTH DIAGNOSTICS
 # ==========================================
-elif page == '3. Battery Health Diagnostics':
+elif page == "3. Battery Health Diagnostics":
   st.markdown(
       '<div class="main-header">🔋 Battery State of Health (SoH) Diagnostics'
-      ' Engine</div>',
+      " Engine</div>",
       unsafe_allow_html=True,
   )
   st.markdown(
       '<div class="sub-header">Simulates battery degradation and identifies'
-      ' warranty replacement risks.</div>',
+      " warranty replacement risks.</div>",
       unsafe_allow_html=True,
   )
   st.divider()
@@ -298,24 +305,24 @@ elif page == '3. Battery Health Diagnostics':
   col_b1, col_b2 = st.columns(2)
 
   with col_b1:
-    cycles = st.slider('Completed Charge Cycles:', 50, 1500, 450)
-    avg_temp = st.slider('Average Ambient Temp (°C):', 25, 48, 41)
+    cycles = st.slider("Completed Charge Cycles:", 50, 1500, 450)
+    avg_temp = st.slider("Average Ambient Temp (°C):", 25, 48, 41)
 
     degradation = (cycles / 1500) * 20
     temp_penalty = 5 if avg_temp > 38 else 0
     calculated_soh = max(10, round(100 - degradation - temp_penalty, 2))
 
-    st.metric('Calculated Battery SoH', f'{calculated_soh}%')
+    st.metric("Calculated Battery SoH", f"{calculated_soh}%")
 
     if calculated_soh < 70:
-      st.error('🚨 WARRANTY CLAIM REQUIRED: Battery SoH dropped below 70%.')
+      st.error("🚨 WARRANTY CLAIM REQUIRED: Battery SoH dropped below 70%.")
     elif calculated_soh < 85:
-      st.warning('⚠️ MODERATE DEGRADATION: Schedule Cell Rebalancing Service.')
+      st.warning("⚠️ MODERATE DEGRADATION: Schedule Cell Rebalancing Service.")
     else:
-      st.success('✅ HEALTHY BATTERY: Operating within normal limits.')
+      st.success("✅ HEALTHY BATTERY: Operating within normal limits.")
 
   with col_b2:
-    st.subheader('Battery SoH Degradation Curve over 1,500 Cycles')
+    st.subheader("Battery SoH Degradation Curve over 1,500 Cycles")
     cycles_range = np.linspace(0, 1500, 50)
     soh_normal = [
         max(10, round(100 - ((c / 1500) * 20), 2)) for c in cycles_range
@@ -325,52 +332,52 @@ elif page == '3. Battery Health Diagnostics':
     ]
 
     fig_b, ax_b = plt.subplots(figsize=(6, 4))
-    ax_b.plot(cycles_range, soh_normal, label='Normal Temp (30°C)', color='green')
+    ax_b.plot(cycles_range, soh_normal, label="Normal Temp (30°C)", color="green")
     ax_b.plot(
         cycles_range,
         soh_summer,
-        label='Indian Summer (41°C)',
-        color='red',
-        linestyle='--',
+        label="Indian Summer (41°C)",
+        color="red",
+        linestyle="--",
     )
-    ax_b.axhline(70, color='gray', linestyle=':', label='Warranty Limit (70%)')
-    ax_b.set_xlabel('Charge Cycles')
-    ax_b.set_ylabel('SoH %')
+    ax_b.axhline(70, color="gray", linestyle=":", label="Warranty Limit (70%)")
+    ax_b.set_xlabel("Charge Cycles")
+    ax_b.set_ylabel("SoH %")
     ax_b.legend()
     st.pyplot(fig_b)
 
 # ==========================================
 # MODULE 4: DEALER P&L & MARGINS
 # ==========================================
-elif page == '4. Dealer P&L & Margins':
+elif page == "4. Dealer P&L & Margins":
   st.markdown(
       '<div class="main-header">💰 Dealership Model-wise Gross Profit'
-      ' Margins</div>',
+      " Margins</div>",
       unsafe_allow_html=True,
   )
   st.markdown(
       '<div class="sub-header">Evaluates ex-showroom profits, unit margins,'
-      ' and commercial sales payouts.</div>',
+      " and commercial sales payouts.</div>",
       unsafe_allow_html=True,
   )
   st.divider()
 
   st.dataframe(
       filtered_stock[[
-          'Model_Variant',
-          'Unit_Cost_Price',
-          'Ex_Showroom_Price',
-          'Unit_Margin_INR',
+          "Model_Variant",
+          "Unit_Cost_Price",
+          "Ex_Showroom_Price",
+          "Unit_Margin_INR",
       ]],
       use_container_width=True,
   )
 
   fig_p, ax_p = plt.subplots(figsize=(8, 4))
   ax_p.bar(
-      filtered_stock['Model_Variant'],
-      filtered_stock['Unit_Margin_INR'],
-      color='#2ca02c',
+      filtered_stock["Model_Variant"],
+      filtered_stock["Unit_Margin_INR"],
+      color="#2ca02c",
   )
-  ax_p.set_ylabel('Dealer Profit Margin per Unit (₹)')
-  plt.xticks(rotation=15, ha='right')
+  ax_p.set_ylabel("Dealer Profit Margin per Unit (₹)")
+  plt.xticks(rotation=15, ha="right")
   st.pyplot(fig_p)
